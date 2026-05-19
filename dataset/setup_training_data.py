@@ -6,7 +6,6 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from dataset.static_dataset import SyntheticVideoDataset
 from dataset.vos_dataset import VOSMergeTrainDataset, EventbaseVOSMergeTrainDataset
 from dataset.load_subset import load_subset, load_empty_masks
 
@@ -23,6 +22,10 @@ def worker_init_fn(worker_id):
 
 
 def setup_pre_training_datasets(cfg):
+    # Lazy import: pre-training uses TPS/thinplate through SyntheticVideoDataset.
+    # Main event training should not require thinplate when pre_training.enabled=False.
+    from dataset.static_dataset import SyntheticVideoDataset
+
     root = cfg.data.image_datasets.base
     datasets = cfg.data.pre_training.datasets
     dataset_configs = [cfg.data.image_datasets[d] for d in datasets]
@@ -60,7 +63,7 @@ def setup_main_training_datasets(cfg, max_skip):
     dataset = VOSMergeTrainDataset(dataset_configs,
                                    seq_length=cfg.main_training.seq_length,
                                    max_num_obj=cfg.main_training.num_objects,
-                                   size=cfg.main_training.crop_size[0], 
+                                   size=cfg.main_training.crop_size[0],
                                    merge_probability=cfg.main_training.merge_probability)
 
     batch_size = cfg.main_training.batch_size
@@ -81,7 +84,7 @@ def setup_main_training_event_dataset(cfg, max_skip):
         name: {
             'im_root': path.join(root, d_cfg.image_directory),
             'gt_root': path.join(root, d_cfg.mask_directory),
-            'event_root' : path.join(root, d_cfg.event_directory),
+            'event_root': path.join(root, d_cfg.event_directory),
             'max_skip': max_skip // d_cfg.frame_interval,
             'subset': load_subset(d_cfg.subset) if d_cfg.subset else None,
             'empty_masks': load_empty_masks(d_cfg.empty_masks) if d_cfg.empty_masks else None,
@@ -91,10 +94,10 @@ def setup_main_training_event_dataset(cfg, max_skip):
     }
 
     dataset = EventbaseVOSMergeTrainDataset(dataset_configs,
-                                   seq_length=cfg.main_training.seq_length,
-                                   max_num_obj=cfg.main_training.num_objects,
-                                   size=cfg.main_training.crop_size[0],
-                                   merge_probability=cfg.main_training.merge_probability)
+                                            seq_length=cfg.main_training.seq_length,
+                                            max_num_obj=cfg.main_training.num_objects,
+                                            size=cfg.main_training.crop_size[0],
+                                            merge_probability=cfg.main_training.merge_probability)
 
     batch_size = cfg.main_training.batch_size
     num_workers = cfg.num_workers
@@ -106,7 +109,10 @@ def setup_main_training_event_dataset(cfg, max_skip):
 
 
 def construct_loader(dataset, batch_size, num_workers, local_rank):
+    # Make the loader usable both under torchrun/DDP and in local single-process debug scripts.
+    world_size = int(os.environ.get('WORLD_SIZE', 1))
     train_sampler = torch.utils.data.distributed.DistributedSampler(dataset,
+                                                                    num_replicas=world_size,
                                                                     rank=local_rank,
                                                                     shuffle=True)
     train_loader = DataLoader(dataset,
@@ -115,5 +121,5 @@ def construct_loader(dataset, batch_size, num_workers, local_rank):
                               num_workers=num_workers,
                               worker_init_fn=worker_init_fn,
                               drop_last=True,
-                              persistent_workers=True)
+                              persistent_workers=(num_workers > 0))
     return train_sampler, train_loader
