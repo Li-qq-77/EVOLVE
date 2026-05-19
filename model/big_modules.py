@@ -82,11 +82,12 @@ class PixelEncoder(nn.Module):
 
         self.is_resnet = 'resnet' in model_cfg.pixel_encoder.type
         resnet_model_path = model_cfg.get('resnet_model_path')
+        pretrained_backbone = model_cfg.get('resnet_pretrained', True)
         if self.is_resnet:
             if model_cfg.pixel_encoder.type == 'resnet18':
-                network = resnet.resnet18(pretrained=True, model_dir=resnet_model_path)
+                network = resnet.resnet18(pretrained=pretrained_backbone, model_dir=resnet_model_path)
             elif model_cfg.pixel_encoder.type == 'resnet50':
-                network = resnet.resnet50(pretrained=True, model_dir=resnet_model_path)
+                network = resnet.resnet50(pretrained=pretrained_backbone, model_dir=resnet_model_path)
             else:
                 raise NotImplementedError
             self.conv1 = network.conv1
@@ -125,11 +126,12 @@ class EventEncoder(nn.Module):
 
         self.is_resnet = 'resnet' in model_cfg.pixel_encoder.type
         resnet_model_path = model_cfg.get('resnet_model_path')
+        pretrained_backbone = model_cfg.get('resnet_pretrained', True)
         if self.is_resnet:
             if model_cfg.pixel_encoder.type == 'resnet18':
-                network = resnet.resnet18(pretrained=True, model_dir=resnet_model_path)
+                network = resnet.resnet18(pretrained=pretrained_backbone, model_dir=resnet_model_path)
             elif model_cfg.pixel_encoder.type == 'resnet50':
-                network = resnet.resnet50(pretrained=True, model_dir=resnet_model_path)
+                network = resnet.resnet50(pretrained=pretrained_backbone, model_dir=resnet_model_path)
             else:
                 raise NotImplementedError
             self.conv1 = nn.Conv2d(5, 64, kernel_size=7, stride=2, padding=3, bias=False)
@@ -254,10 +256,11 @@ class MaskEncoder(nn.Module):
         extra_dim = 1 if single_object else 2
 
         resnet_model_path = model_cfg.get('resnet_model_path')
+        pretrained_backbone = model_cfg.get('resnet_pretrained', True)
         if model_cfg.mask_encoder.type == 'resnet18':
-            network = resnet.resnet18(pretrained=True, extra_dim=extra_dim, model_dir=resnet_model_path)
+            network = resnet.resnet18(pretrained=pretrained_backbone, extra_dim=extra_dim, model_dir=resnet_model_path)
         elif model_cfg.mask_encoder.type == 'resnet50':
-            network = resnet.resnet50(pretrained=True, extra_dim=extra_dim, model_dir=resnet_model_path)
+            network = resnet.resnet50(pretrained=pretrained_backbone, extra_dim=extra_dim, model_dir=resnet_model_path)
         else:
             raise NotImplementedError
         self.conv1 = network.conv1

@@ -11,24 +11,24 @@ from PIL import Image
 import numpy as np
 import cv2
 
-from cutie.dataset.utils import im_mean, reseed
+from dataset.utils import im_mean, reseed
 
 log = logging.getLogger()
-local_rank = int(os.environ['LOCAL_RANK'])
+local_rank = int(os.environ.get('LOCAL_RANK', 0))
 
 
 class VOSMergeTrainDataset(Dataset):
     """
     Note: data normalization happens within the model instead of here
-    
+
     For VOS data training
     data_configs is a Dict indexed by the name of the dataset, each containing:
     - im_root: path to the image directory
     - gt_root: path to the ground-truth directory
     - max_skip: maximum number of allowed separations between consecutive frames
     - subset: a list of video names to use. If None, all videos are used.
-    - empty_masks: a Dict[video_name, list of frames as string without extensions] 
-                    that contain no objects. 
+    - empty_masks: a Dict[video_name, list of frames as string without extensions]
+                    that contain no objects.
                     Can be None. (used to speed up data selection -- not mandatory)
     - multiplier: number of times to oversample this dataset
 
@@ -39,7 +39,7 @@ class VOSMergeTrainDataset(Dataset):
     - Apply random transform to each of the frames
     - The distance between frames is limited by max_skip
 
-    With merge_probability, we sample another sequence and merge them as a single training sample 
+    With merge_probability, we sample another sequence and merge them as a single training sample
     """
     def __init__(self, data_configs, seq_length=3, max_num_obj=3, size=480, merge_probability=0.0):
 
@@ -55,7 +55,7 @@ class VOSMergeTrainDataset(Dataset):
 
         self.videos: Dict[List[str]] = {}
         self.frames: Dict[Dict[str, List[str]]] = {}
-        self.video_frames: List[Tuple(str, str, int)] = []
+        self.video_frames: List[Tuple[str, str, int]] = []
 
         for dataset, config in data_configs.items():
             self.frames[dataset] = {}
@@ -379,7 +379,7 @@ class EventbaseVOSMergeTrainDataset(Dataset):
         self.videos: Dict[List[str]] = {}
         self.frames: Dict[Dict[str, List[str]]] = {}
         self.events: Dict[Dict[str, List[str]]] = {}
-        self.video_frames: List[Tuple(str, str, int)] = []
+        self.video_frames: List[Tuple[str, str, int]] = []
 
         for dataset, config in data_configs.items():
             self.frames[dataset] = {}
@@ -498,7 +498,7 @@ class EventbaseVOSMergeTrainDataset(Dataset):
             #davis
             # This is reset if the sampled frames are not admissible
             frames_idx = [frame_idx]
-            
+
 
             for seed_trial in range(self.max_seed_trials):
                 seed_ok = True
@@ -559,14 +559,14 @@ class EventbaseVOSMergeTrainDataset(Dataset):
                 events = []
                 for i, f_idx in enumerate(frames_idx):
                     #llevos = npy, png
-                    if frames[f_idx][:-4] == '00000':
-                        jpg_name = '00001.jpg'
-                        png_name = '00001.png'
-                        event_name = '00001.npy'
-                    else:
-                        jpg_name = frames[f_idx][:-4] + '.jpg'
-                        png_name = frames[f_idx][:-4] + '.png'
-                        event_name = frames[f_idx][:-4] + '.npy'
+                    frame_stem = frames[f_idx][:-4]
+
+                    if frame_stem == '00000':
+                        frame_stem = '00001'
+
+                    img_name = frame_stem + '.png'
+                    png_name = frame_stem + '.png'
+                    event_name = frame_stem + '.npy'
 
                     # jpg_name = frames[f_idx][:-4] + '.png'
                     # png_name = frames[f_idx][:-4] + '.png'
@@ -575,7 +575,7 @@ class EventbaseVOSMergeTrainDataset(Dataset):
                     # jpg_name = frames[f_idx][:-4] + '.jpg'
                     # png_name = frames[f_idx][:-4] + '.png'
                     # event_name = '00000' +frames[f_idx][:-4] + '.npy'
-                    info['frames'].append(jpg_name)
+                    info['frames'].append(img_name)
 
                     if i == 0:
                         for crop_trial in range(self.max_crop_trials):
@@ -607,7 +607,7 @@ class EventbaseVOSMergeTrainDataset(Dataset):
 
                     # No check requires for images
                     reseed(sequence_seed)
-                    this_im = Image.open(path.join(im_path, jpg_name)).convert('RGB')
+                    this_im = Image.open(path.join(im_path, img_name)).convert('RGB')
                     this_im = self.sequence_image_dual_transform(this_im)
                     this_im = self.sequence_image_only_transform(this_im)
 
@@ -694,7 +694,7 @@ class EventbaseVOSMergeTrainDataset(Dataset):
         # 1 if object exist, 0 otherwise
         selector = [1 if i < info['num_objects'] else 0 for i in range(self.max_num_obj)]
         selector = torch.FloatTensor(selector)
-        
+
 
         data = {
             'rgb': images,

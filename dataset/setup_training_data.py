@@ -6,11 +6,11 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from cutie.dataset.static_dataset import SyntheticVideoDataset
-from cutie.dataset.vos_dataset import VOSMergeTrainDataset, EventbaseVOSMergeTrainDataset
-from cutie.utils.load_subset import load_subset, load_empty_masks
+from dataset.static_dataset import SyntheticVideoDataset
+from dataset.vos_dataset import VOSMergeTrainDataset, EventbaseVOSMergeTrainDataset
+from dataset.load_subset import load_subset, load_empty_masks
 
-_local_rank = int(os.environ['LOCAL_RANK'])
+_local_rank = int(os.environ.get('LOCAL_RANK', 0))
 log = logging.getLogger()
 
 

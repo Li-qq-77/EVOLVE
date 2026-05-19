@@ -1,0 +1,35 @@
+# Python cache / bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE / local project settings
+.idea/
+.vscode/
+
+# Local debug artifacts
+tree.txt
+*.zip
+*.log
+
+# Datasets and generated arrays should not be committed
+Lowlight_images/
+Normallight_images/
+Annotations/
+Lowlight_event/
+EventVoxel/
+*.npy
+
+# Model checkpoints / training outputs
+*.pth
+*.pt
+*.ckpt
+checkpoints/
+weights/
+runs/
+outputs/

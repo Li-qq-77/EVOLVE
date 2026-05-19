@@ -9,8 +9,8 @@ from torchvision.transforms import InterpolationMode
 from PIL import Image
 import numpy as np
 
-from cutie.dataset.utils import im_mean, reseed
-from cutie.dataset.tps import random_tps_warp
+from dataset.utils import im_mean, reseed
+from dataset.tps import random_tps_warp
 
 log = logging.getLogger()
 local_rank = int(os.environ['LOCAL_RANK'])
