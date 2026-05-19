@@ -32,8 +32,14 @@ def build_cfg(model_name: str, no_pretrained_backbone: bool):
         # Avoid internet downloads during local interface/shape debugging.
         model_cfg.resnet_pretrained = False
 
-    OmegaConf.resolve(model_cfg)
-    return OmegaConf.create({"model": model_cfg})
+    # Some entries in config/model/base.yaml use interpolations such as
+    # ${model.embed_dim}. They can only be resolved after the model config
+    # has been placed under the top-level key named "model". Resolving
+    # model_cfg by itself breaks on Python/OmegaConf with
+    # InterpolationKeyError: model.embed_dim not found.
+    cfg = OmegaConf.create({"model": model_cfg})
+    OmegaConf.resolve(cfg)
+    return cfg
 
 
 def build_stage_cfg(args):
@@ -153,6 +159,14 @@ def main():
     parser.add_argument("--weights", default=None)
     parser.add_argument("--amp", action="store_true")
     parser.add_argument(
+        "--eval-mode",
+        action="store_true",
+        help=(
+            "Run model.eval(). Default is train mode because CutieTrainWrapper "
+            "is designed for the training forward path and produces auxiliary attn_mask only in train mode."
+        ),
+    )
+    parser.add_argument(
         "--use-pretrained-backbone",
         action="store_true",
         help="Allow ResNet weight loading/downloading. Disabled by default for local debugging.",
@@ -197,12 +211,23 @@ def main():
 
     model = CutieTrainWrapper(cfg, stage_cfg).to(device)
     load_optional_weights(model, args.weights)
-    model.eval()
+
+    if args.eval_mode:
+        # This path is useful for debugging inference-like behavior, but the training wrapper
+        # may skip some auxiliary tensors such as attn_mask in eval mode.
+        model.eval()
+        mode_name = "eval"
+    else:
+        # CutieTrainWrapper.forward is the training path. It expects train-mode auxiliary
+        # outputs, including attn_mask from the query transformer.
+        model.train()
+        mode_name = "train"
+
     total_params = sum(p.numel() for p in model.parameters())
-    print(f"      model={args.model}, params={total_params:,}, device={device}")
+    print(f"      model={args.model}, params={total_params:,}, device={device}, mode={mode_name}")
 
     print("[5/5] Run forward")
-    with torch.inference_mode():
+    with torch.no_grad():
         out = model(data)
 
     print("[SUCCESS] Minimum forward test passed: dataset output can feed EVOLVE/CUTIE model.")
