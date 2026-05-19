@@ -37,7 +37,7 @@ OMP_NUM_THREADS=4 torchrun --master_port 25357 --nproc_per_node=4 evolve/train.p
 ## Evaluation Command
 
 ```bash
-python cutie/eval_vos.py dataset=[dataset] weights=[path to model file] model=[small/base]
+python eval_vos.py dataset=[dataset] weights=[path to model file] model=[small/base]
 ```
 
 - Possible options for `dataset`: see `config/eval_config.yaml`.
