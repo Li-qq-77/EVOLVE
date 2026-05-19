@@ -1,0 +1,22 @@
+defaults:
+  - datasets
+
+pre_training:
+  datasets: []
+
+main_training:
+  datasets:
+    - LLEVOS
+  num_iterations: 10
+  lr_schedule_steps: [8, 9]
+
+vos_datasets:
+  base: D:/download/lowlight_event_vos
+  LLEVOS:
+    image_directory: Lowlight_images
+    mask_directory: Annotations
+    event_directory: EventVoxel
+    multiplier: 1
+    frame_interval: 3
+    subset: null
+    empty_masks: null
