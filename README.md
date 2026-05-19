@@ -24,7 +24,7 @@ See [Datasets](datasets/Readme.md) & [Installation](INSTALL.md)
 We trained with four A6000 GPUs, which took around 10 hours on LLE-VOS.
 
 ```
-OMP_NUM_THREADS=4 torchrun --master_port 25357 --nproc_per_node=4 evolve/train.py exp_id=[some unique id] model=base data=base
+OMP_NUM_THREADS=4 torchrun --master_port 25357 --nproc_per_node=4 train.py exp_id=[some unique id] model=base data=base
 ```
 
 - Change `nproc_per_node` to change the number of GPUs.
@@ -37,7 +37,7 @@ OMP_NUM_THREADS=4 torchrun --master_port 25357 --nproc_per_node=4 evolve/train.p
 ## Evaluation Command
 
 ```bash
-python cutie/eval_vos.py dataset=[dataset] weights=[path to model file] model=[small/base]
+python eval_vos.py dataset=[dataset] weights=[path to model file] model=[small/base]
 ```
 
 - Possible options for `dataset`: see `config/eval_config.yaml`.
